@@ -1,8 +1,7 @@
-Just Paste into console console terminal. 
+Just Paste into console console terminal.
 Creates a personality folder, a settings folder, a installed models folder and a launcher, all are linked and work together.
-Go into config and paste a link to the hugging face model you want.
-
-The script handles all dependencies and builds everything you need.
+Go into config and paste a link to the hugging face model you want then run the executeable.
+The script handles all dependencies and builds everything you need with no bulky overhead like Python or Ollama.
 
 ## What Gets Created
 
