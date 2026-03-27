@@ -50,3 +50,6 @@ Edit `Llama/personality.txt` to customize the system prompt. Default is "You are
 ## Offline Operation
 
 Once a model downloads, everything runs completely offline with no internet required. Models cache in `Llama/models/` and reuse on subsequent launches.
+
+##Want Any Features or Updates?
+Just let me know and ill add them.
