@@ -5,11 +5,8 @@ Go into `llama-config.txt`, set the `CURRENT_MODEL` to a Hugging Face model URL 
 ## What Gets Created
 
 * **Launch-Llama.desktop** – Desktop launcher icon to start the chat session
-
 * **Desktop/Llama/llama-config.txt** – Model selection and all generation settings
-
 * **Desktop/Llama/personality.txt** – AI system prompt / personality
-
 * **Desktop/Llama/models/** – Downloaded models are automatically stored and cached here
 
 ## First Launch
@@ -22,7 +19,7 @@ Go into `llama-config.txt`, set the `CURRENT_MODEL` to a Hugging Face model URL 
 
 The config file automatically updates with a list of all installed models for easy switching.
 
-### Generation Settings
+### Easy txt Settings
 
 * **THREADS** – CPU threads to use (4 is safe for Pi 5, try 3 to leave headroom)
 * **TEMP** – Temperature (0.0–2.0, lower = more focused, higher = more creative)
@@ -34,19 +31,13 @@ The config file automatically updates with a list of all installed models for ea
 * **TOP_P** – Top-P (nucleus) sampling
 * **MIN_P** – Min-P sampling
 * **SEED** – Random seed (-1 = random each run)
-
-### Reasoning & Output Settings
-
 * **REASONING_BUDGET** – For reasoning models only. 0 = thinking disabled. 1+ sets token budget for reasoning steps.
 * **EMOJI_ALLOW** – `true` allows emojis. `false` restricts output to ASCII only (blocks emojis).
-
-### Performance Settings
-
 * **FLASH_ATTN** – Flash Attention (`true`/`false`/`auto`) for faster inference and lower memory use
 * **MLOCK** – Lock model in RAM (`true`/`false`) to prevent swapping to disk
 
 ### AI Personality
-Edit `Desktop/Llama/personality.txt` to customize the system prompt. Default is "You are a helpful AI assistant."
+Edit `Desktop/Llama/personality.txt` to customize the system prompt.
 
 ## Performance Tips
 
