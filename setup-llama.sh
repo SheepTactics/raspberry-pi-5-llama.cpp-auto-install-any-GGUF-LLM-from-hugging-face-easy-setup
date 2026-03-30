@@ -15,48 +15,116 @@ PERSONALITY="$LLAMA_FOLDER/personality.txt"
 RUN_SCRIPT="$LLAMA_DIR/run-llama.sh"
 DESKTOP_FILE="$HOME/Desktop/Launch-Llama.desktop"
 
+# ---------------------------------------------------------------------
+# Install confirmation
+# Each component is shown one at a time.
+# Type Y to install it, N to skip, or A to install all remaining.
+# Once A is chosen all further prompts are skipped.
+# ---------------------------------------------------------------------
+ALL_CHOSEN=false
+INSTALL_PACKAGES=false
+INSTALL_LLAMA=false
+
+prompt_install() {
+    local label="$1"
+    local desc="$2"
+    local varname="$3"
+
+    if [ "$ALL_CHOSEN" = "true" ]; then
+        printf -v "$varname" '%s' "true"
+        return
+    fi
+
+    echo "  $label"
+    echo "  $desc"
+    printf "  [Y/N/A]: "
+    read -r ans || ans="n"
+    echo ""
+
+    case "${ans^^}" in
+        A)
+            ALL_CHOSEN=true
+            INSTALL_PACKAGES=true
+            INSTALL_LLAMA=true
+            printf -v "$varname" '%s' "true"
+            ;;
+        Y) printf -v "$varname" '%s' "true" ;;
+        *) printf -v "$varname" '%s' "false" ;;
+    esac
+}
+
+echo ""
+echo "=============================="
+echo " LLAMA.CPP INSTALLER"
+echo "=============================="
+echo ""
+echo "The following components can be installed."
+echo "For each one type:"
+echo "  Y  - install this component"
+echo "  N  - skip this component"
+echo "  A  - install this and all remaining components"
+echo ""
+
+prompt_install \
+    "[1] System packages (git, build-essential, cmake, libssl-dev)" \
+    "      Tools needed to compile llama.cpp from source." \
+    "INSTALL_PACKAGES"
+
+prompt_install \
+    "[2] llama.cpp" \
+    "      The AI engine that runs language models locally. Compiles from source, 5-15 min on Pi 5." \
+    "INSTALL_LLAMA"
+
+
+echo "------------------------------"
+echo ""
+
 mkdir -p "$LLAMA_FOLDER" "$MODELS_DIR"
 
 # ---------------------------------------------------------------------
 # System update and build dependencies
 # libssl-dev is required for HTTPS connections to HuggingFace.
 # ---------------------------------------------------------------------
-echo "Updating system and installing build tools..."
-sudo apt-get update -qq
-sudo apt-get install -y git build-essential cmake libssl-dev
+if [ "$INSTALL_PACKAGES" = "true" ]; then
+    echo "Updating system and installing build tools..."
+    sudo apt-get update -qq
+    sudo apt-get install -y git build-essential cmake libssl-dev
+fi
 
 # ---------------------------------------------------------------------
 # Build llama.cpp
 # Checks for HTTPS support in any existing binary and rebuilds if
 # missing. Delete ~/llama.cpp/build to force a full rebuild.
 # ---------------------------------------------------------------------
-NEEDS_BUILD=false
+if [ "$INSTALL_LLAMA" = "true" ]; then
+    NEEDS_BUILD=false
 
-if [ ! -f "$BINARY" ]; then
-    NEEDS_BUILD=true
-elif "$BINARY" -hf test/test 2>&1 | grep -q "HTTPS is not supported"; then
-    echo "Existing binary missing HTTPS support. Rebuilding..."
-    rm -rf "$LLAMA_DIR/build"
-    NEEDS_BUILD=true
-fi
-
-if [ "$NEEDS_BUILD" = true ]; then
-    echo ""
-    echo "Building llama.cpp (5 to 15 minutes on Pi 5)..."
-    if [ ! -d "$LLAMA_DIR" ]; then
-        git clone --depth 1 https://github.com/ggml-org/llama.cpp.git "$LLAMA_DIR"
-    fi
-    cd "$LLAMA_DIR"
-    rm -rf build
-    cmake -B build -DGGML_NATIVE=ON -DLLAMA_OPENSSL=ON
-    cmake --build build --config Release -j"$(nproc)"
     if [ ! -f "$BINARY" ]; then
-        echo "ERROR: Build failed. Check output above."
-        exit 1
+        NEEDS_BUILD=true
+    elif "$BINARY" -hf test/test 2>&1 | grep -q "HTTPS is not supported"; then
+        echo "Existing binary missing HTTPS support. Rebuilding..."
+        rm -rf "$LLAMA_DIR/build"
+        NEEDS_BUILD=true
     fi
-    echo "Build complete."
-else
-    echo "llama-cli already built with HTTPS support. Skipping."
+
+    if [ "$NEEDS_BUILD" = true ]; then
+        echo ""
+        echo "Building llama.cpp (5 to 15 minutes on Pi 5)..."
+        if [ ! -d "$LLAMA_DIR" ]; then
+            git clone --depth 1 https://github.com/ggml-org/llama.cpp.git "$LLAMA_DIR"
+        fi
+        cd "$LLAMA_DIR"
+        rm -rf build
+        cmake -B build -DGGML_NATIVE=ON -DLLAMA_OPENSSL=ON
+        cmake --build build --config Release -j"$(nproc)"
+        if [ ! -f "$BINARY" ]; then
+            echo "ERROR: Build failed. Check output above."
+            exit 1
+        fi
+        echo "Build complete."
+    else
+        echo "llama-cli already built with HTTPS support. Skipping."
+    fi
 fi
 
 # ---------------------------------------------------------------------
@@ -88,19 +156,19 @@ THREADS=4
 
 # Sampling temperature. Lower = more focused, higher = more creative.
 # 0.0 to 2.0
-TEMP=1
+TEMP=0.7
 
 # Max context window in tokens (prompt + response combined).
 # Higher uses more RAM. 4096 is comfortable on Pi 5.
 CONTEXT=4096
 
-# Max tokens to generate per response. -1 means no limit.
-MAX_TOKENS=-1
+# Max tokens to generate per response. -1 = no limit.
+MAX_TOKENS=128
 
 # Batch size for prompt processing. Higher is faster but uses more RAM.
 BATCH_SIZE=1024
 
-# Penalises repeating recent tokens. 1.0 = off, 1.1 is a mild nudge.
+# Penalises repeating recent tokens. 1.0 = off.
 REPEAT_PENALTY=1.2
 
 # Top-K sampling. Limits token candidates to the K most likely.
@@ -139,9 +207,9 @@ EMOJI_ALLOW=false
 EOF
 fi
 
-# ---------------------------------------------------------------------
+# -----------------------------------------------------------------
 # Personality / system prompt
-# ---------------------------------------------------------------------
+# -----------------------------------------------------------------
 if [ ! -f "$PERSONALITY" ]; then
     cat > "$PERSONALITY" << 'EOF'
 You are a helpful AI assistant.
@@ -170,7 +238,7 @@ get_val() {
 }
 
 # Replace everything between the installed models markers with a fresh list.
-# Scans MODELS_DIR for .gguf files and lists them with their full path.
+# Scans MODELS_DIR for .gguf files and lists their basenames.
 # mmproj files are multimodal projection weights, not main models - excluded.
 update_model_list() {
     local list=""
@@ -214,8 +282,16 @@ if [ ! -f "$BINARY" ]; then
     exec bash
 fi
 
+# Scan models folder and update the config list before any model checks.
+update_model_list
+
+# If CURRENT_MODEL is unset, auto-select the first model found in MODELS_DIR.
 if [ -z "$CURRENT_MODEL" ]; then
-    echo "ERROR: CURRENT_MODEL is not set in llama-config.txt"
+    CURRENT_MODEL=$(find "$MODELS_DIR" -name "*.gguf" -not -name "mmproj-*" 2>/dev/null | sort | head -1)
+fi
+
+if [ -z "$CURRENT_MODEL" ]; then
+    echo "ERROR: CURRENT_MODEL is not set and no models found in $MODELS_DIR"
     echo ""
     echo "Set it to a HuggingFace URL publisher/modelname or local .gguf path."
     exec bash
@@ -248,9 +324,6 @@ if pkill -x llama-cli 2>/dev/null; then
     pkill -9 -x llama-cli 2>/dev/null || true
     sleep 1
 fi
-
-# Refresh installed models list in config
-update_model_list
 
 INFERENCE_FLAGS=(
     --threads "$THREADS"
