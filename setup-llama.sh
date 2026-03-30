@@ -285,9 +285,10 @@ fi
 # Scan models folder and update the config list before any model checks.
 update_model_list
 
-# If CURRENT_MODEL is unset, auto-select the first model found in MODELS_DIR.
+# If CURRENT_MODEL is unset, auto-select the first model found in MODELS_DIR and save it to config.
 if [ -z "$CURRENT_MODEL" ]; then
     CURRENT_MODEL=$(find "$MODELS_DIR" -name "*.gguf" -not -name "mmproj-*" 2>/dev/null | sort | head -1)
+    [ -n "$CURRENT_MODEL" ] && sed -i "s|^CURRENT_MODEL=.*|CURRENT_MODEL=$(basename "$CURRENT_MODEL")|" "$CONFIG"
 fi
 
 if [ -z "$CURRENT_MODEL" ]; then
