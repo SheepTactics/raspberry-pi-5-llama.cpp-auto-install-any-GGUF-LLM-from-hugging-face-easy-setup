@@ -21,20 +21,22 @@ The config file automatically updates with a list of all installed models for ea
 
 ### Easy txt Settings
 
-* **THREADS**           - CPU threads
-* **TEMP**              - Temperature
-* **CONTEXT**           - Context window size in tokens
-* **MAX_TOKENS**        - Maximum tokens to generate (-1 = no limit)
-* **BATCH_SIZE**        - Prompt processing batch size
-* **REPEAT_PENALTY**    - Repetition penalty
-* **TOP_K**             - Top-K sampling
-* **TOP_P**             - Top-P (nucleus) sampling
-* **MIN_P**             - Min-P sampling
-* **SEED**              - Random seed (-1 = random each run)
-* **REASONING_BUDGET**  - Max allowed reasoning for reasoning models (0 = off)
-* **FLASH_ATTN**        - Flash Attention for faster inference and lower memory use
-* **MLOCK**             - Lock model in RAM
-* **EMOJI_ALLOW**       - Allow or restrict emojis by forcing ASCII
+```text
+THREADS           - CPU threads
+TEMP              - Temperature
+CONTEXT           - Context window size in tokens
+MAX_TOKENS        - Maximum tokens to generate (-1 = no limit)
+BATCH_SIZE        - Prompt processing batch size
+REPEAT_PENALTY    - Repetition penalty
+TOP_K             - Top-K sampling
+TOP_P             - Top-P (nucleus) sampling
+MIN_P             - Min-P sampling
+SEED              - Random seed (-1 = random each run)
+REASONING_BUDGET  - Max allowed reasoning for reasoning models (0 = off)
+FLASH_ATTN        - Flash Attention for faster inference and lower memory use
+MLOCK             - Lock model in RAM
+EMOJI_ALLOW       - Allow or restrict emojis by forcing ASCII
+```
 
 ### AI Personality
 Edit `Desktop/Llama/personality.txt` to customize the system prompt.
